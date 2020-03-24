@@ -37,7 +37,9 @@ LABEL "org.opencontainers.image.title"="linkcheck ${VERSION}"
 LABEL "org.opencontainers.image.description"="linkcheck ${VERSION}"
 
 RUN set -x \
-	&& apk add --no-cache bash
+	&& apk add --no-cache \
+		bash \
+		curl
 COPY --from=builder /usr/bin/linkcheck /usr/bin/linkcheck
 WORKDIR /data
 ENTRYPOINT ["linkcheck"]
