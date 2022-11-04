@@ -1,25 +1,28 @@
-FROM alpine:3.11 as builder
+FROM alpine:3.16 as builder
 
-RUN set -x \
+RUN set -eux \
 	&& apk add --no-cache \
+		bash \
 		curl
 
 ARG VERSION=latest
-RUN set -x \
+RUN set -eux \
 	&& if [ "${VERSION}" = "latest" ]; then \
-		VERSION="$( curl -Ss https://github.com/cytopia/linkcheck/releases \
+		VERSION="$( curl -Ss https://github.com/cytopia/linkcheck/tags \
 			| tac \
 			| tac \
-			| grep -Eo 'archive/v[.0-9]+\.zip' \
+			| grep -Eo 'cytopia/linkcheck/releases/tag/v[.0-9]+' \
 			| grep -Eo '[.0-9]+[0-9]' \
 			| sort -V \
 			| tail -1 )"; \
 	fi \
 	&& curl -sS https://raw.githubusercontent.com/cytopia/linkcheck/v${VERSION}/linkcheck > /usr/bin/linkcheck \
-	&& chmod +x /usr/bin/linkcheck
+	&& chmod +x /usr/bin/linkcheck \
+	\
+	&& linkcheck --version
 
 
-FROM alpine:3.11 as production
+FROM alpine:3.16 as production
 ARG VERSION=latest
 # https://github.com/opencontainers/image-spec/blob/master/annotations.md
 #LABEL "org.opencontainers.image.created"=""
@@ -36,10 +39,11 @@ LABEL "org.opencontainers.image.ref.name"="linkcheck ${VERSION}"
 LABEL "org.opencontainers.image.title"="linkcheck ${VERSION}"
 LABEL "org.opencontainers.image.description"="linkcheck ${VERSION}"
 
-RUN set -x \
+RUN set -eux \
 	&& apk add --no-cache \
 		bash \
 		curl
+
 COPY --from=builder /usr/bin/linkcheck /usr/bin/linkcheck
 WORKDIR /data
 ENTRYPOINT ["linkcheck"]
